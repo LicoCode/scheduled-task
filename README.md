@@ -3,7 +3,7 @@
 参考 [daily_stock_analysis](https://github.com/ZhuLinsen/daily_stock_analysis) 的「GitHub Actions 定时 + 邮件推送」模式，每天自动发送两封邮件：
 
 1. **GitHub 每日热榜**：抓取 [GitHub Trending](https://github.com/trending?since=daily)，项目描述翻译为中文后推送  
-2. **AI 前沿突破速览**：从 [arXiv](https://arxiv.org/) 筛选世界模型 / Agent / 大模型 / 社会智能等前沿方向，按「突破性与实际效果」精排，并做效果向中文解读  
+2. **AI 前沿突破速览**：从 [arXiv](https://arxiv.org/) 筛选世界模型 / Agent / AI 机器人 / 大模型 / 社会智能等前沿方向，按「突破性与实际效果」精排，并做效果向中文解读  
 
 ## 功能说明
 
@@ -23,7 +23,7 @@
 当前**不按**期刊引用 / Accepted 等同行评议信号筛选。流程是：
 
 1. **拉取**近期 AI 相关分类论文（`cs.AI` / `cs.LG` / `cs.CL` / `cs.CV` 等）  
-2. **主题粗筛**：命中世界模型、Agent、大模型、社会智能、多模态等关键词（见 `src/topics.py`）  
+2. **主题粗筛**：命中世界模型、Agent、AI 机器人/具身智能、大模型、社会智能、多模态等关键词（见 `src/topics.py`）  
 3. **LLM 精排**：按突破性与实际效果打分，弱化纯刷榜 / 小改方法类工作  
 4. **效果向解读**：写清解决什么问题、带来什么新能力、对产品/产业意味着什么；**不写**技术细节  
 
@@ -39,44 +39,43 @@
 
 路径：`Settings → Secrets and variables → Actions`
 
-**必填（邮件）**
+**原则：不必全配。** 未设置的项使用程序默认值；发信至少要有邮箱相关配置，LLM 强烈建议配置。
+
+**发信需要**
 
 | 名称 | 说明 |
 |------|------|
 | `EMAIL_SENDER` | 发件邮箱，如 `xxx@qq.com` |
 | `EMAIL_PASSWORD` | SMTP 授权码（不是登录密码） |
-| `EMAIL_RECEIVERS` | 收件人，多个用英文逗号分隔；可留空表示发给自己 |
+| `EMAIL_RECEIVERS` | 可选；多个用逗号分隔，不填则发给自己 |
 
-**邮件可选**
+**邮件可选（有默认）**
 
 | 名称 | 默认 | 说明 |
 |------|------|------|
 | `EMAIL_SENDER_NAME` | `每日资讯助手` | 发件显示名 |
-| `SMTP_HOST` | `smtp.qq.com` | SMTP 服务器 |
-| `SMTP_PORT` | `465` | SMTP 端口（SSL） |
+| `SMTP_HOST` / `SMTP_PORT` | 按发件箱推断 | 一般不用填；见下表 |
 
-**LLM（强烈推荐）**
+**LLM（要用翻译 / 精排 / 解读时必须全部指定，无默认值）**
 
-用于：热榜描述翻译、论文突破性排序、效果向解读。
+| 名称 | 说明 |
+|------|------|
+| `OPENAI_API_KEY` | API Key |
+| `OPENAI_BASE_URL` | 兼容 OpenAI 的 Base URL，如 `https://api.deepseek.com/v1` |
+| `OPENAI_MODEL` | 模型名，如 `deepseek-chat` |
 
-| 名称 | 默认 | 说明 |
-|------|------|------|
-| `OPENAI_API_KEY` | — | 兼容 OpenAI Chat Completions 的 API Key |
-| `OPENAI_BASE_URL` | `https://api.deepseek.com/v1` | API Base URL |
-| `OPENAI_MODEL` | `deepseek-chat` | 模型名 |
+三项缺一则视为未启用 LLM：热榜描述保留原文；论文按主题词得分排序，解读退化为摘要截断。任务仍可运行并发信。
 
-未配置 LLM 时：邮件仍可发送；热榜描述保留原文；论文按主题词得分排序，解读退化为摘要截断。
-
-**业务可选**
+**业务可选（均可不配，用默认）**
 
 | 名称 | 默认 | 说明 |
 |------|------|------|
 | `GITHUB_LANGUAGES` | 空（全语言） | 如 `python,typescript` |
 | `GITHUB_TRENDING_LIMIT` | `15` | 热榜条数 |
-| `ARXIV_CATEGORIES` | `cs.AI,cs.LG,cs.CL,cs.CV,cs.NE,stat.ML` | arXiv 分类 |
+| `ARXIV_CATEGORIES` | `cs.AI,cs.LG,cs.CL,cs.CV,cs.RO,cs.NE,stat.ML` | arXiv 分类（含机器人 cs.RO） |
 | `ARXIV_MAX_PAPERS` | `10` | 最终入选篇数 |
 | `ARXIV_CANDIDATE_POOL` | `25` | 主题粗筛后送入 LLM 精排的候选数 |
-| `ARXIV_TOPIC_KEYWORDS` | 内置名单 | 自定义主题词，逗号分隔；留空用 `src/topics.py` |
+| `ARXIV_TOPIC_KEYWORDS` | 内置名单 | 自定义主题词；不配则用 `src/topics.py` |
 
 ### 3. 手动试跑
 
@@ -94,7 +93,8 @@ python -m venv .venv
 
 pip install -r requirements.txt
 copy .env.example .env   # 或 cp .env.example .env
-# 编辑 .env：邮箱必填；LLM 推荐填写
+# 按需填写即可：未写/留空的项自动用默认值（LLM 除外）
+# 正式发信需邮箱；启用 LLM 需同时指定 OPENAI_API_KEY / OPENAI_BASE_URL / OPENAI_MODEL
 ```
 
 ```bash
@@ -132,13 +132,18 @@ python -m src.main all
 └── README.md
 ```
 
-## QQ 邮箱授权码示例
+## 邮箱与 SMTP
 
-1. QQ 邮箱 → 设置 → 账户 → 开启 POP3/SMTP  
-2. 生成授权码，填入 `EMAIL_PASSWORD`  
-3. `SMTP_HOST=smtp.qq.com`，`SMTP_PORT=465`  
+未配置 `SMTP_HOST` / `SMTP_PORT` 时，按 `EMAIL_SENDER` 域名自动推断：
 
-Gmail 请使用应用专用密码，并将 `SMTP_HOST` 设为 `smtp.gmail.com`。
+| 发件邮箱 | SMTP |
+|----------|------|
+| `*@qq.com` / `*@foxmail.com` | `smtp.qq.com:465` |
+| `*@163.com` | `smtp.163.com:465` |
+| `*@126.com` | `smtp.126.com:465` |
+| `*@gmail.com` | `smtp.gmail.com:465` |
+
+QQ / 163 使用邮箱授权码；Gmail 使用应用专用密码。需要时仍可手动覆盖 `SMTP_HOST` / `SMTP_PORT`。
 
 ## License
 

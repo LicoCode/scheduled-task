@@ -1,4 +1,4 @@
-"""前沿主题关键词：粗筛突破性方向（世界模型 / Agent / 大模型等）。"""
+"""前沿主题关键词：粗筛突破性方向（世界模型 / Agent / AI 机器人 / 大模型等）。"""
 
 # 可用 ARXIV_TOPIC_KEYWORDS 覆盖（逗号分隔）
 DEFAULT_TOPIC_KEYWORDS = [
@@ -7,7 +7,32 @@ DEFAULT_TOPIC_KEYWORDS = [
     "world models",
     "latent world",
     "embodied",
+    "embodied ai",
+    "embodied intelligence",
     "robotics foundation",
+    # AI 机器人 / 具身智能
+    "robot",
+    "robotic",
+    "robotics",
+    "humanoid",
+    "humanoid robot",
+    "manipulator",
+    "manipulation",
+    "dexterous",
+    "loco-manipulation",
+    "vision-language-action",
+    "vision language action",
+    "vla",
+    "vla model",
+    "policy learning",
+    "imitation learning",
+    "teleoperation",
+    "sim-to-real",
+    "sim2real",
+    "quadruped",
+    "mobile manipulator",
+    "warehouse robot",
+    "service robot",
     # Agent
     "agent",
     "multi-agent",
@@ -38,7 +63,9 @@ DEFAULT_TOPIC_KEYWORDS = [
     "social mind",
     "social reasoning",
     "human-ai",
-    # 突破性表述（弱信号，权重低一些在匹配里同等计分即可）
+    "human-robot",
+    "human robot interaction",
+    # 突破性表述（弱信号）
     "state-of-the-art",
     "state of the art",
     "breakthrough",
