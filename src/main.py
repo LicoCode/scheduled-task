@@ -1,0 +1,93 @@
+"""CLI 入口：github / arxiv / all。"""
+
+from __future__ import annotations
+
+import argparse
+import logging
+import sys
+from pathlib import Path
+
+from .arxiv_papers import fetch_arxiv_papers, interpret_papers
+from .config import load_config
+from .email_sender import send_email
+from .github_trending import fetch_github_trending, translate_repo_descriptions
+from .templates import render_arxiv_email, render_github_email
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger("main")
+
+
+def _save_report(name: str, content: str) -> Path:
+    out_dir = Path("reports")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / name
+    path.write_text(content, encoding="utf-8")
+    logger.info("Report saved: %s", path)
+    return path
+
+
+def run_github(dry_run: bool = False) -> None:
+    cfg = load_config()
+    repos = fetch_github_trending(
+        languages=cfg.github_languages,
+        limit=cfg.github_trending_limit,
+    )
+    repos = translate_repo_descriptions(repos, cfg.llm)
+    subject, html, text = render_github_email(repos)
+    _save_report("github-trending.html", html)
+    logger.info("Fetched %d trending repos", len(repos))
+
+    if dry_run:
+        logger.info("[dry-run] skip sending: %s", subject)
+        return
+    send_email(cfg.email, subject, html, text)
+    logger.info("GitHub trending email sent to %s", cfg.email.receivers)
+
+
+def run_arxiv(dry_run: bool = False) -> None:
+    cfg = load_config()
+    papers = fetch_arxiv_papers(
+        categories=cfg.arxiv_categories,
+        max_papers=cfg.arxiv_max_papers,
+        topic_keywords=cfg.arxiv_topic_keywords or None,
+        candidate_pool=cfg.arxiv_candidate_pool,
+        llm=cfg.llm,
+    )
+    papers = interpret_papers(papers, cfg.llm)
+    subject, html, text = render_arxiv_email(papers)
+    _save_report("arxiv-digest.html", html)
+    logger.info("Prepared %d arXiv papers", len(papers))
+
+    if dry_run:
+        logger.info("[dry-run] skip sending: %s", subject)
+        return
+    send_email(cfg.email, subject, html, text)
+    logger.info("arXiv digest email sent to %s", cfg.email.receivers)
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="每日 GitHub 热榜 / arXiv 论文邮件推送")
+    parser.add_argument(
+        "task",
+        choices=["github", "arxiv", "all"],
+        help="要执行的任务",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="只抓取并生成报告，不发送邮件",
+    )
+    args = parser.parse_args(argv)
+
+    if args.task in {"github", "all"}:
+        run_github(dry_run=args.dry_run)
+    if args.task in {"arxiv", "all"}:
+        run_arxiv(dry_run=args.dry_run)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

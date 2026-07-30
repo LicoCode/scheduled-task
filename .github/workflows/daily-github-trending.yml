@@ -1,0 +1,47 @@
+name: GitHub Daily Trending
+
+on:
+  schedule:
+    # 每天北京时间 09:00（UTC 01:00）
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run GitHub trending digest
+        env:
+          EMAIL_SENDER: ${{ vars.EMAIL_SENDER || secrets.EMAIL_SENDER }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_RECEIVERS: ${{ vars.EMAIL_RECEIVERS || secrets.EMAIL_RECEIVERS }}
+          EMAIL_SENDER_NAME: ${{ vars.EMAIL_SENDER_NAME || secrets.EMAIL_SENDER_NAME || '每日资讯助手' }}
+          SMTP_HOST: ${{ vars.SMTP_HOST || secrets.SMTP_HOST || 'smtp.qq.com' }}
+          SMTP_PORT: ${{ vars.SMTP_PORT || secrets.SMTP_PORT || '465' }}
+          GITHUB_LANGUAGES: ${{ vars.GITHUB_LANGUAGES || secrets.GITHUB_LANGUAGES }}
+          GITHUB_TRENDING_LIMIT: ${{ vars.GITHUB_TRENDING_LIMIT || secrets.GITHUB_TRENDING_LIMIT || '15' }}
+        run: python -m src.main github
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-trending-report
+          path: reports/
+          if-no-files-found: ignore
