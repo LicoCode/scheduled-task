@@ -1,12 +1,9 @@
-"""邮件发送（对齐 daily_stock_analysis 的 SMTP 逻辑，可选 Resend）。"""
+"""邮件发送（对齐 daily_stock_analysis 的 SMTP 逻辑）。"""
 
 from __future__ import annotations
 
-import json
 import logging
 import smtplib
-import urllib.error
-import urllib.request
 from email.header import Header
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -34,11 +31,6 @@ SMTP_CONFIGS = {
 def send_email(cfg: EmailConfig, subject: str, html_body: str, text_body: str = "") -> None:
     if not cfg.receivers:
         raise ValueError("请配置 EMAIL_RECEIVERS 或 EMAIL_SENDER")
-
-    if cfg.resend_api_key:
-        _send_via_resend(cfg, subject, html_body, text_body)
-        return
-
     if not cfg.sender or not cfg.password:
         raise ValueError("请配置 EMAIL_SENDER 与 EMAIL_PASSWORD（授权码）")
 
@@ -70,7 +62,6 @@ def _resolve_smtp(cfg: EmailConfig) -> tuple[str, int, bool]:
 
     if preset:
         host = cfg.smtp_host or str(preset["server"])
-        # 仍指向官方服务器时，强制使用预设端口与 SSL 模式
         if host == preset["server"]:
             return host, int(preset["port"]), bool(preset["ssl"])
         port = cfg.smtp_port or int(preset["port"])
@@ -117,50 +108,14 @@ def _send_via_smtp(
         raise RuntimeError(
             f"邮件认证失败（{exc.smtp_code}）：{err}。"
             "请确认 EMAIL_PASSWORD 是授权码（不是登录密码），且已开启 SMTP。"
-            "若在 GitHub Actions 使用 QQ 仍失败，可改用 RESEND_API_KEY 或 Gmail。"
         ) from exc
     except smtplib.SMTPServerDisconnected as exc:
         raise RuntimeError(
             f"SMTP 连接被断开（{host}:{port}）：{exc}。"
-            "常见原因：授权码错误、未开 SMTP、或 QQ 风控拦截（Actions 海外 IP 更常见）。"
-            "可改用 Gmail 应用专用密码或配置 RESEND_API_KEY。"
+            "常见原因：授权码错误、未开 SMTP、或邮箱风控拦截。"
+            "可换用 163 / Gmail 应用专用密码再试。"
         ) from exc
     except Exception as exc:
         raise RuntimeError(f"邮件发送失败: {exc}") from exc
     finally:
         _close_server(server)
-
-
-def _send_via_resend(
-    cfg: EmailConfig, subject: str, html_body: str, text_body: str
-) -> None:
-    from_addr = cfg.resend_from or cfg.sender
-    if not from_addr:
-        raise ValueError("使用 Resend 时请配置 RESEND_FROM 或 EMAIL_SENDER")
-
-    payload = {
-        "from": f"{cfg.sender_name} <{from_addr}>",
-        "to": cfg.receivers,
-        "subject": subject,
-        "html": html_body,
-    }
-    if text_body:
-        payload["text"] = text_body
-
-    data = json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(
-        "https://api.resend.com/emails",
-        data=data,
-        headers={
-            "Authorization": f"Bearer {cfg.resend_api_key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            body = resp.read().decode("utf-8", errors="replace")
-        logger.info("Email sent via Resend: %s", body[:200])
-    except urllib.error.HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"Resend 发信失败 HTTP {exc.code}: {detail}") from exc

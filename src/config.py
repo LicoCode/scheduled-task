@@ -99,8 +99,6 @@ class EmailConfig:
     sender_name: str
     smtp_host: str
     smtp_port: int
-    resend_api_key: str = ""
-    resend_from: str = ""
 
 
 @dataclass(frozen=True)
@@ -144,8 +142,6 @@ def load_config() -> Config:
             sender_name=_env("EMAIL_SENDER_NAME", "每日资讯助手"),
             smtp_host=smtp_host,
             smtp_port=smtp_port,
-            resend_api_key=_env("RESEND_API_KEY"),
-            resend_from=_env("RESEND_FROM"),
         ),
         llm=LLMConfig(
             api_key=_env("OPENAI_API_KEY"),

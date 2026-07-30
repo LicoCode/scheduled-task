@@ -41,14 +41,13 @@
 
 **原则：不必全配。** 未设置的项使用程序默认值；发信至少要有邮箱相关配置，LLM 强烈建议配置。
 
-**发信需要（二选一）**
+**发信需要**
 
-| 方式 | 配置 | 说明 |
-|------|------|------|
-| SMTP | `EMAIL_SENDER` + `EMAIL_PASSWORD` | QQ / 163 / Gmail；QQ 在 Actions 海外机房经常失败 |
-| Resend（推荐用于 Actions） | `RESEND_API_KEY` + 可选 `RESEND_FROM` | HTTPS API，不走 QQ SMTP |
-
-`EMAIL_RECEIVERS` 可选；不填则发给 `EMAIL_SENDER`。
+| 名称 | 说明 |
+|------|------|
+| `EMAIL_SENDER` | 发件邮箱，如 `xxx@163.com` |
+| `EMAIL_PASSWORD` | SMTP 授权码（不是登录密码） |
+| `EMAIL_RECEIVERS` | 可选；多个用逗号分隔，不填则发给自己 |
 
 **邮件可选（有默认）**
 
@@ -56,7 +55,6 @@
 |------|------|------|
 | `EMAIL_SENDER_NAME` | `每日资讯助手` | 发件显示名 |
 | `SMTP_HOST` / `SMTP_PORT` | 按发件箱推断 | 一般不用填；见下表 |
-| `RESEND_FROM` | `EMAIL_SENDER` | Resend 发件地址；测试可用 `Name <onboarding@resend.dev>` |
 
 **LLM（要用翻译 / 精排 / 解读时必须全部指定，无默认值）**
 
@@ -147,14 +145,7 @@ python -m src.main all
 
 QQ / 163 使用邮箱授权码；Gmail 使用应用专用密码。需要时仍可手动覆盖 `SMTP_HOST` / `SMTP_PORT`。
 
-### GitHub Actions 发信说明
-
-GitHub 托管 Runner 多在海外，**QQ 邮箱 SMTP 经常直接断开或 535 失败**（与授权码无关的风控也很常见）。可选方案：
-
-1. **推荐**：注册 [Resend](https://resend.com)，在 Secrets 配置 `RESEND_API_KEY`；测试阶段可设  
-   `RESEND_FROM=每日资讯助手 <onboarding@resend.dev>`，收件人用你自己的邮箱。  
-2. 改用 **Gmail 应用专用密码** 作为 `EMAIL_SENDER` / `EMAIL_PASSWORD`。  
-3. 本地 SMTP 能通、仅 Actions 失败时，优先考虑换 Resend，而不是反复重置 QQ 授权码。
+> 说明：GitHub Actions 托管 Runner 多在海外，部分 QQ 邮箱 SMTP 可能被风控；若 Actions 发信失败，可改用 163 或 Gmail。
 
 ## License
 
