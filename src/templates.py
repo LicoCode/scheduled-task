@@ -98,8 +98,18 @@ def render_github_email(boards: list[TrendingBoard]) -> tuple[str, str, str]:
         text_lines.append("")
 
     html = f"""
-    <html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#24292f;font-size:16px;line-height:1.5;">
-      <div style="max-width:780px;margin:0 auto;padding:28px;">
+    <!DOCTYPE html>
+    <html><head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+        html,body{{margin:0;padding:0;}}
+        .wrap{{width:100%;max-width:780px;margin:0 auto;padding:16px 12px;box-sizing:border-box;}}
+        @media (min-width:640px){{.wrap{{padding:28px 24px;}}}}
+      </style>
+    </head>
+    <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#24292f;font-size:16px;line-height:1.5;">
+      <div class="wrap" style="width:100%;max-width:780px;margin:0 auto;padding:16px 12px;box-sizing:border-box;">
         <h1 style="font-size:26px;margin:0 0 10px;">GitHub 热榜（日 / 周 / 月）</h1>
         <p style="color:#57606a;margin:0 0 8px;font-size:15px;">日期：{date}</p>
         {''.join(sections_html) if sections_html else '<p>暂无数据</p>'}
@@ -121,14 +131,14 @@ def render_arxiv_email(papers: list[Paper]) -> tuple[str, str, str]:
         if paper.impact_score > 0:
             badge_parts.append(
                 '<span style="display:inline-block;background:#fff8c5;color:#9a6700;'
-                'font-size:11px;padding:2px 6px;border-radius:4px;margin-left:6px;">'
+                'font-size:13px;padding:2px 8px;border-radius:4px;margin-left:6px;">'
                 f"影响力 {paper.impact_score:g}/10</span>"
             )
         if paper.topic_hits:
             topics = "、".join(paper.topic_hits[:3])
             badge_parts.append(
                 '<span style="display:inline-block;background:#ddf4ff;color:#0969da;'
-                'font-size:11px;padding:2px 6px;border-radius:4px;margin-left:6px;">'
+                'font-size:13px;padding:2px 8px;border-radius:4px;margin-left:6px;">'
                 f"{escape(topics)}</span>"
             )
         badge = "".join(badge_parts)
@@ -136,25 +146,25 @@ def render_arxiv_email(papers: list[Paper]) -> tuple[str, str, str]:
         if len(paper.authors) > 6:
             authors += " 等"
         why = (
-            f'<div style="font-size:12px;color:#656d76;margin-top:6px;">入选理由：'
+            f'<div style="font-size:14px;color:#656d76;margin-top:8px;">入选理由：'
             f"{escape(paper.impact_why)}</div>"
             if paper.impact_why
             else ""
         )
         blocks.append(
             f"""
-            <div style="padding:16px 0;border-bottom:1px solid #eee;">
-              <div style="font-size:16px;font-weight:600;line-height:1.4;">
+            <div style="padding:18px 0;border-bottom:1px solid #eee;">
+              <div style="font-size:17px;font-weight:600;line-height:1.45;">
                 {i}. <a href="{escape(paper.abs_url)}" style="color:#0969da;text-decoration:none;">
                   {escape(paper.title)}
                 </a>{badge}
               </div>
-              <div style="font-size:12px;color:#656d76;margin-top:6px;">
+              <div style="font-size:14px;color:#656d76;margin-top:8px;">
                 {escape(authors)} · {escape(', '.join(paper.categories[:4]))} ·
                 <a href="{escape(paper.pdf_url)}">PDF</a>
               </div>
               {why}
-              <div style="margin-top:10px;font-size:14px;line-height:1.7;color:#24292f;">
+              <div style="margin-top:12px;font-size:15px;line-height:1.7;color:#24292f;">
                 <strong>效果解读：</strong>{escape(paper.interpretation)}
               </div>
             </div>
@@ -167,16 +177,26 @@ def render_arxiv_email(papers: list[Paper]) -> tuple[str, str, str]:
         )
 
     html = f"""
-    <html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#24292f;">
-      <div style="max-width:720px;margin:0 auto;padding:24px;">
-        <h1 style="font-size:22px;margin:0 0 8px;">AI 前沿突破速览</h1>
-        <p style="color:#57606a;margin:0 0 20px;">
+    <!DOCTYPE html>
+    <html><head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+        html,body{{margin:0;padding:0;}}
+        .wrap{{width:100%;max-width:780px;margin:0 auto;padding:16px 12px;box-sizing:border-box;}}
+        @media (min-width:640px){{.wrap{{padding:28px 24px;}}}}
+      </style>
+    </head>
+    <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#24292f;font-size:16px;line-height:1.5;">
+      <div class="wrap" style="width:100%;max-width:780px;margin:0 auto;padding:16px 12px;box-sizing:border-box;">
+        <h1 style="font-size:26px;margin:0 0 10px;">AI 前沿突破速览</h1>
+        <p style="color:#57606a;margin:0 0 20px;font-size:15px;line-height:1.55;">
           日期：{date} · 聚焦：世界模型 / Agent / AI 机器人 / 大模型前沿 / 社会智能等<br/>
           筛选：主题粗筛 + LLM 按「突破性与实际效果」精排 · 来源
           <a href="https://arxiv.org/">arxiv.org</a>
         </p>
         {''.join(blocks) if blocks else '<p>暂无符合条件的论文。</p>'}
-        <p style="margin-top:24px;font-size:12px;color:#8c959f;">由 scheduled-task 自动生成并通过 GitHub Actions 发送。</p>
+        <p style="margin-top:28px;font-size:13px;color:#8c959f;">由 scheduled-task 自动生成并通过 GitHub Actions 发送。</p>
       </div>
     </body></html>
     """
