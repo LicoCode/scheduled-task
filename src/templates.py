@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from html import escape
 
 from .arxiv_papers import Paper
-from .github_trending import TrendingRepo
+from .github_trending import TrendingBoard, TrendingRepo
 
 # 固定使用东八区，避免 Windows 缺少 tzdata
 CN_TZ = timezone(timedelta(hours=8))
@@ -16,56 +16,94 @@ def today_cn() -> str:
     return datetime.now(CN_TZ).strftime("%Y-%m-%d")
 
 
-def render_github_email(repos: list[TrendingRepo]) -> tuple[str, str, str]:
-    date = today_cn()
-    subject = f"GitHub 每日热榜 · {date}"
-
+def _render_repo_table(repos: list[TrendingRepo], period: str) -> tuple[str, list[str]]:
+    star_label = {
+        "daily": "今日",
+        "weekly": "本周",
+        "monthly": "本月",
+    }.get(period, "周期")
     rows = []
-    text_lines = [subject, ""]
+    text_lines: list[str] = []
     for i, repo in enumerate(repos, 1):
         rows.append(
             f"""
             <tr>
-              <td style="padding:12px 8px;border-bottom:1px solid #eee;vertical-align:top;">{i}</td>
-              <td style="padding:12px 8px;border-bottom:1px solid #eee;">
-                <a href="{escape(repo.url)}" style="color:#0969da;font-weight:600;text-decoration:none;">
+              <td style="padding:14px 10px;border-bottom:1px solid #eee;vertical-align:top;font-size:16px;">{i}</td>
+              <td style="padding:14px 10px;border-bottom:1px solid #eee;">
+                <a href="{escape(repo.url)}" style="color:#0969da;font-weight:600;text-decoration:none;font-size:17px;">
                   {escape(repo.full_name)}
                 </a>
-                <div style="color:#57606a;margin-top:4px;font-size:13px;line-height:1.5;">
+                <div style="color:#57606a;margin-top:6px;font-size:15px;line-height:1.55;">
                   {escape(repo.description or "暂无描述")}
                 </div>
-                <div style="margin-top:8px;font-size:12px;color:#656d76;">
-                  {escape(repo.language or "N/A")} · ⭐ {repo.stars:,} · Fork {repo.forks:,} · 今日 +{repo.stars_today}
+                <div style="margin-top:8px;font-size:14px;color:#656d76;">
+                  {escape(repo.language or "N/A")} · ⭐ {repo.stars:,} · Fork {repo.forks:,} · {star_label} +{repo.stars_period}
                 </div>
               </td>
             </tr>
             """
         )
         text_lines.append(
-            f"{i}. {repo.full_name} (+{repo.stars_today}★) {repo.url}\n"
+            f"{i}. {repo.full_name} ({star_label}+{repo.stars_period}★) {repo.url}\n"
             f"   {repo.description}\n"
             f"   {repo.language or 'N/A'} · ⭐{repo.stars} · Fork {repo.forks}"
         )
-
-    html = f"""
-    <html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#24292f;">
-      <div style="max-width:720px;margin:0 auto;padding:24px;">
-        <h1 style="font-size:22px;margin:0 0 8px;">GitHub 每日热榜</h1>
-        <p style="color:#57606a;margin:0 0 20px;">日期：{date} · 来源：
-          <a href="https://github.com/trending?since=daily">github.com/trending</a>
-        </p>
-        <table style="width:100%;border-collapse:collapse;font-size:14px;">
+    table = f"""
+        <table style="width:100%;border-collapse:collapse;font-size:16px;">
           <thead>
             <tr style="text-align:left;background:#f6f8fa;">
-              <th style="padding:10px 8px;width:36px;">#</th>
-              <th style="padding:10px 8px;">项目</th>
+              <th style="padding:12px 10px;width:40px;font-size:15px;">#</th>
+              <th style="padding:12px 10px;font-size:15px;">项目</th>
             </tr>
           </thead>
           <tbody>
             {''.join(rows) if rows else '<tr><td colspan="2" style="padding:16px;">暂无数据</td></tr>'}
           </tbody>
         </table>
-        <p style="margin-top:24px;font-size:12px;color:#8c959f;">由 scheduled-task 自动生成并通过 GitHub Actions 发送。</p>
+    """
+    return table, text_lines
+
+
+def render_github_email(boards: list[TrendingBoard]) -> tuple[str, str, str]:
+    date = today_cn()
+    subject = f"【热榜】GitHub 日/周/月榜 · {date}"
+
+    section_titles = {
+        "daily": "日榜（今日）",
+        "weekly": "周榜（近一周）",
+        "monthly": "月榜（近一月）",
+    }
+    sections_html: list[str] = []
+    text_lines = [subject, ""]
+
+    for board in boards:
+        title = section_titles.get(board.period, board.title)
+        table, lines = _render_repo_table(board.repos, board.period)
+        since = board.period
+        sections_html.append(
+            f"""
+            <h2 style="font-size:22px;margin:32px 0 10px;">{escape(title)}</h2>
+            <p style="color:#57606a;margin:0 0 14px;font-size:15px;">
+              来源：
+              <a href="https://github.com/trending?since={escape(since)}">
+                github.com/trending?since={escape(since)}
+              </a>
+              · 共 {len(board.repos)} 条
+            </p>
+            {table}
+            """
+        )
+        text_lines.append(f"## {title}")
+        text_lines.extend(lines)
+        text_lines.append("")
+
+    html = f"""
+    <html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#24292f;font-size:16px;line-height:1.5;">
+      <div style="max-width:780px;margin:0 auto;padding:28px;">
+        <h1 style="font-size:26px;margin:0 0 10px;">GitHub 热榜（日 / 周 / 月）</h1>
+        <p style="color:#57606a;margin:0 0 8px;font-size:15px;">日期：{date}</p>
+        {''.join(sections_html) if sections_html else '<p>暂无数据</p>'}
+        <p style="margin-top:28px;font-size:13px;color:#8c959f;">由 scheduled-task 自动生成并通过 GitHub Actions 发送。</p>
       </div>
     </body></html>
     """
@@ -74,7 +112,7 @@ def render_github_email(repos: list[TrendingRepo]) -> tuple[str, str, str]:
 
 def render_arxiv_email(papers: list[Paper]) -> tuple[str, str, str]:
     date = today_cn()
-    subject = f"AI 前沿突破速览 · {date}"
+    subject = f"【论文】AI 前沿突破速览 · {date}"
 
     blocks = []
     text_lines = [subject, ""]
