@@ -2,21 +2,22 @@
 
 参考 [daily_stock_analysis](https://github.com/ZhuLinsen/daily_stock_analysis) 的「GitHub Actions 定时 + 邮件推送」模式，每天自动发送两封邮件：
 
-1. **GitHub 每日热榜**：抓取 [GitHub Trending](https://github.com/trending?since=daily)，项目描述翻译为中文后推送  
+1. **GitHub 热榜**：抓取 [GitHub Trending](https://github.com/trending) **日榜 / 周榜 / 月榜**，项目描述翻译为中文后推送  
 2. **AI 前沿突破速览**：从 [arXiv](https://arxiv.org/) 筛选世界模型 / Agent / AI 机器人 / 大模型 / 社会智能等前沿方向，按「突破性与实际效果」精排，并做效果向中文解读  
 
 ## 功能说明
 
 | 任务 | 默认时间（北京时间） | Workflow | 做了什么 |
 |------|----------------------|----------|----------|
-| GitHub 热榜 | 每天 09:00 | `GitHub Daily Trending` | 抓取日榜 → LLM 译描述 → 发邮件 |
+| GitHub 热榜 | 每天 09:00 | `GitHub Daily Trending` | 抓取日/周/月榜 → LLM 译描述 → 发邮件 |
 | AI 前沿速览 | 每天 10:00 | `arXiv Daily Papers` | 主题粗筛 → LLM 影响力精排 → 效果解读 → 发邮件 |
 
 ### GitHub 热榜
 
-- 主源：`github.com/trending?since=daily`
+- 主源：`github.com/trending?since=daily|weekly|monthly`
+- 一封邮件包含三段：日榜、周榜、月榜
 - 失败时回退：社区备份 JSON → GitHub Search API
-- 描述默认译为简体中文（需配置 LLM；未配置则保留原文）
+- 描述默认译为简体中文（需配置 LLM；未配置则保留原文；跨榜去重翻译）
 
 ### AI 前沿突破速览（无同行评议过滤）
 

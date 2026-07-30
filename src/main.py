@@ -10,7 +10,7 @@ from pathlib import Path
 from .arxiv_papers import fetch_arxiv_papers, interpret_papers
 from .config import load_config
 from .email_sender import send_email
-from .github_trending import fetch_github_trending, translate_repo_descriptions
+from .github_trending import fetch_github_trending_boards, translate_boards
 from .templates import render_arxiv_email, render_github_email
 
 logging.basicConfig(
@@ -31,14 +31,19 @@ def _save_report(name: str, content: str) -> Path:
 
 def run_github(dry_run: bool = False) -> None:
     cfg = load_config()
-    repos = fetch_github_trending(
+    boards = fetch_github_trending_boards(
         languages=cfg.github_languages,
         limit=cfg.github_trending_limit,
     )
-    repos = translate_repo_descriptions(repos, cfg.llm)
-    subject, html, text = render_github_email(repos)
+    boards = translate_boards(boards, cfg.llm)
+    subject, html, text = render_github_email(boards)
     _save_report("github-trending.html", html)
-    logger.info("Fetched %d trending repos", len(repos))
+    total = sum(len(b.repos) for b in boards)
+    logger.info(
+        "Fetched trending boards: %s (total %d repos)",
+        ", ".join(f"{b.period}={len(b.repos)}" for b in boards),
+        total,
+    )
 
     if dry_run:
         logger.info("[dry-run] skip sending: %s", subject)
