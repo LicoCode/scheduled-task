@@ -133,7 +133,7 @@ def render_arxiv_email(papers: list[Paper]) -> tuple[str, str, str]:
       <div style="max-width:720px;margin:0 auto;padding:24px;">
         <h1 style="font-size:22px;margin:0 0 8px;">AI 前沿突破速览</h1>
         <p style="color:#57606a;margin:0 0 20px;">
-          日期：{date} · 聚焦：世界模型 / Agent / 大模型前沿 / 社会智能等<br/>
+          日期：{date} · 聚焦：世界模型 / Agent / AI 机器人 / 大模型前沿 / 社会智能等<br/>
           筛选：主题粗筛 + LLM 按「突破性与实际效果」精排 · 来源
           <a href="https://arxiv.org/">arxiv.org</a>
         </p>
