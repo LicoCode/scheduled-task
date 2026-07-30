@@ -52,18 +52,22 @@ def _split_csv(value: str | None) -> list[str]:
 
 
 def infer_smtp_from_sender(sender: str) -> tuple[str, int]:
-    """根据发件邮箱域名推断 SMTP；支持 QQ / 163 / Gmail。"""
+    """根据发件邮箱域名推断 SMTP；支持 QQ / 163 / Gmail 等。"""
     domain = ""
     if "@" in sender:
         domain = sender.rsplit("@", 1)[-1].strip().lower()
 
+    # 与 email_sender.SMTP_CONFIGS 保持一致
     presets: dict[str, tuple[str, int]] = {
         "qq.com": ("smtp.qq.com", 465),
         "foxmail.com": ("smtp.qq.com", 465),
         "163.com": ("smtp.163.com", 465),
         "126.com": ("smtp.126.com", 465),
-        "gmail.com": ("smtp.gmail.com", 465),
-        "googlemail.com": ("smtp.gmail.com", 465),
+        "gmail.com": ("smtp.gmail.com", 587),
+        "googlemail.com": ("smtp.gmail.com", 587),
+        "outlook.com": ("smtp-mail.outlook.com", 587),
+        "hotmail.com": ("smtp-mail.outlook.com", 587),
+        "live.com": ("smtp-mail.outlook.com", 587),
     }
     if domain in presets:
         return presets[domain]
