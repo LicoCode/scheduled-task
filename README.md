@@ -146,7 +146,7 @@ python -m src.main all
 
 QQ / 163 使用邮箱授权码；Gmail 使用应用专用密码。需要时仍可手动覆盖 `SMTP_HOST` / `SMTP_PORT`。
 
-> 说明：GitHub Actions 托管 Runner 多在海外，部分 QQ 邮箱 SMTP 可能被风控；若 Actions 发信失败，可改用 163 或 Gmail。
+> 说明：GitHub Actions 托管 Runner 多在海外， QQ、163邮箱 SMTP 可能被风控；若 Actions 发信失败，可改用 Gmail。
 
 ## License
 
