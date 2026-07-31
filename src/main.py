@@ -19,6 +19,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger("main")
 
+# 热榜 / 论文各自固定发件显示名（不可配置）
+SENDER_NAME_GITHUB = "GitHub 热榜"
+SENDER_NAME_ARXIV = "AI 前沿速览"
+
 
 def _save_report(name: str, content: str) -> Path:
     out_dir = Path("reports")
@@ -48,7 +52,7 @@ def run_github(dry_run: bool = False) -> None:
     if dry_run:
         logger.info("[dry-run] skip sending: %s", subject)
         return
-    send_email(cfg.email, subject, html, text)
+    send_email(cfg.email, subject, html, text, sender_name=SENDER_NAME_GITHUB)
     logger.info("GitHub trending email sent to %s", cfg.email.receivers)
 
 
@@ -69,7 +73,7 @@ def run_arxiv(dry_run: bool = False) -> None:
     if dry_run:
         logger.info("[dry-run] skip sending: %s", subject)
         return
-    send_email(cfg.email, subject, html, text)
+    send_email(cfg.email, subject, html, text, sender_name=SENDER_NAME_ARXIV)
     logger.info("arXiv digest email sent to %s", cfg.email.receivers)
 
 
