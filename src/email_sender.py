@@ -28,19 +28,25 @@ SMTP_CONFIGS = {
 }
 
 
-def send_email(cfg: EmailConfig, subject: str, html_body: str, text_body: str = "") -> None:
+def send_email(
+    cfg: EmailConfig,
+    subject: str,
+    html_body: str,
+    text_body: str = "",
+    *,
+    sender_name: str,
+) -> None:
     if not cfg.receivers:
         raise ValueError("请配置 EMAIL_RECEIVERS 或 EMAIL_SENDER")
     if not cfg.sender or not cfg.password:
         raise ValueError("请配置 EMAIL_SENDER 与 EMAIL_PASSWORD（授权码）")
 
-    _send_via_smtp(cfg, subject, html_body, text_body)
+    _send_via_smtp(cfg, subject, html_body, text_body, sender_name=sender_name)
 
 
 def _format_sender_address(sender_name: str, sender: str) -> str:
     """非 ASCII 发件显示名需 Header 编码（参考 daily_stock_analysis #708）。"""
-    name = sender_name or "每日资讯助手"
-    return formataddr((str(Header(str(name), "utf-8")), sender))
+    return formataddr((str(Header(str(sender_name), "utf-8")), sender))
 
 
 def _close_server(server: Optional[smtplib.SMTP]) -> None:
@@ -73,7 +79,12 @@ def _resolve_smtp(cfg: EmailConfig) -> tuple[str, int, bool]:
 
 
 def _send_via_smtp(
-    cfg: EmailConfig, subject: str, html_body: str, text_body: str
+    cfg: EmailConfig,
+    subject: str,
+    html_body: str,
+    text_body: str,
+    *,
+    sender_name: str,
 ) -> None:
     sender = cfg.sender
     password = cfg.password
@@ -82,7 +93,7 @@ def _send_via_smtp(
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = Header(subject, "utf-8")
-    msg["From"] = _format_sender_address(cfg.sender_name, sender)
+    msg["From"] = _format_sender_address(sender_name, sender)
     msg["To"] = ", ".join(receivers)
     if text_body:
         msg.attach(MIMEText(text_body, "plain", "utf-8"))

@@ -96,7 +96,6 @@ class EmailConfig:
     sender: str
     password: str
     receivers: list[str]
-    sender_name: str
     smtp_host: str
     smtp_port: int
 
@@ -139,7 +138,6 @@ def load_config() -> Config:
             sender=sender,
             password=password,
             receivers=receivers,
-            sender_name=_env("EMAIL_SENDER_NAME", "每日资讯助手"),
             smtp_host=smtp_host,
             smtp_port=smtp_port,
         ),
